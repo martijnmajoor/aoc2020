@@ -1,4 +1,4 @@
-module github.com/martijnmajoor/aoc2020
+module github.com/martijnmajoor/aoc2020/day1
 
 go 1.15
 
