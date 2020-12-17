@@ -38,7 +38,9 @@ namespace day17
                 while ((line = file.ReadLine()) != null)
                 {
                     for(int x = 0; x < line.Length; x++) {
-                        state.AddCube(line[x], x, y, 0);
+                        if (line[x] == '#') {
+                            state.AddCube(x, y, 0);
+                        }
                     }
                     y++;
                 }
@@ -47,11 +49,7 @@ namespace day17
         public void Simulate(int amount, bool hyper = false)
         {
             while(amount >0) {
-                state.Pad(hyper);
-                state.Toggle();
-
-                var x = state.Active();
-
+                state.Toggle(hyper);
                 amount--;
             }
         }
@@ -67,40 +65,40 @@ namespace day17
         public State()
         {
         }
-        public List<Cube> Neighbors(Cube c)
+        public List<Cube> Neighbors(int x, int y, int z, int w)
         {
-            return cubes.FindAll(m => Math.Abs(m.X - c.X) <2 && Math.Abs(m.Y - c.Y) <2 && Math.Abs(m.Z - c.Z) <2 && Math.Abs(m.W - c.W) <2);
+            return cubes.FindAll(c => Math.Abs(c.X - x) <2 && Math.Abs(c.Y - y) <2 && Math.Abs(c.Z - z) <2 && Math.Abs(c.W - w) <2);
         }
-        public void AddCube(char state, int x, int y, int z, int w = 0)
+        public void AddCube(int x, int y, int z, int w = 0)
         {
-            cubes.Add(new Cube(state, x, y, z, w));
+            cubes.Add(new Cube(x, y, z, w));
         }
-        public void Pad(bool hyper)
+        public void Toggle(bool hyper)
         {
             Frame frame = Zoom(hyper);
-            
+
+            List<Cube> actives = new List<Cube>();
+            List<Cube> inactives = new List<Cube>();
+
             for (int w = frame.MinW -1; w <= frame.MaxW +1; w++) {
-                for (int z = frame.MinZ -1; z <= frame.MaxZ +1; z++) {
+               for (int z = frame.MinZ -1; z <= frame.MaxZ +1; z++) {
                     for (int y = frame.MinY -1; y <= frame.MaxY +1; y++) {
-                        for (int x = frame.MinX -1; x <= frame.MaxY +1; x++) {
-                            if (!cubes.Exists(c => c.X == x && c.Y == y && c.Z == z && c.W == w)) {
-                                AddCube('.', x, y, z, w);
-                            }
+                        for (int x = frame.MinX -1; x <= frame.MaxX +1; x++) {
+                            Cube current = cubes.Find(c => c.X == x && c.Y == y && c.Z == z && c.W == w);
+                            int neighbors = Neighbors(x, y, z, w).Count();
+                            
+                            if (current != null && (neighbors < 3 || neighbors > 4)) {
+                                inactives.Add(current);
+                            } else if (current == null && neighbors == 3) {
+                                actives.Add(new Cube(x, y, z, w));
+                            }    
                         }
                     }
-                }
+               }
             }
-        }
-        public void Toggle()
-        {
-            cubes
-                .FindAll(c => 
-                    {
-                        int neighbors = Neighbors(c).FindAll(cc => cc.Active == true).Count();
-                        return (c.Active && (neighbors < 3 || neighbors > 4)) || (!c.Active && neighbors == 3); 
-                    }
-                )
-                .ForEach(c => c.Toggle());
+            
+            actives.ForEach(c => cubes.Add(c));
+            inactives.ForEach(c => cubes.Remove(c));
         }
         public Frame Zoom(bool hyper)
         {
@@ -117,7 +115,7 @@ namespace day17
         }
         public int Active()
         {
-            return cubes.Count(c => c.Active);
+            return cubes.Count();
         }
     }
     public class Cube
@@ -126,20 +124,13 @@ namespace day17
         public int X { get; private set; }
         public int Y { get; private set; }
         public int Z { get; private set; }
-        public bool Active { get; private set; }
 
-        public Cube(char state, int x, int y, int z, int w = 0)
+        public Cube(int x, int y, int z, int w = 0)
         {
             W = w;
             X = x;
             Y = y;
-            Z = z;
-
-            Active = state == '#' ? true : false; 
-        }
-        public void Toggle()
-        {
-            Active = !Active;
+            Z = z; 
         }
     }
     public class Frame
