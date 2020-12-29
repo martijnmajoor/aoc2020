@@ -1,0 +1,6 @@
+FROM php:8.0-cli
+RUN cd /usr/local/etc/php/conf.d/ && \
+  echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/mem.ini
+COPY . /usr/src/myapp
+WORKDIR /usr/src/myapp
+CMD [ "php", "./solution.php" ]
